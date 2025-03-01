@@ -1,0 +1,218 @@
+<!--
+
+### INSTRUCTIONS ###
+
+Build a personal transit tracker in a few minutes!
+
+1. GET A 511 API KEY AND ENTER IT BELOW
+
+a. Request a token at https://511.org/open-data/token. It's a 36 chacter string with a few dashes.
+b. In the javascript just below, edit var apiKey = "YOUR_KEY";
+
+2. CUSTOMIZE THE LABELS, STOPS, AND LINE
+
+For each stop / line combo you want to track:
+a. Create your own label.
+b. Find the Stop ID (easiest on Google Maps).
+c. Optionally, enter the line (like "14" or "N"). This is used to only the timings from specific bus/train lines.
+d. If you want to have have headers/titles, only have the label field (no stopId/line), and it'll show bold.
+
+DONE!
+
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+	<script type="text/javascript">
+
+	// Enter your personal API key
+	var apiKey = "705e9e9b-0294-4ba2-8e6a-24718953301f";
+
+	// Customize each stop
+	var stopsAndLabels = [
+	  { "label": "From home" },
+	  { "label": "52 to Forest Hill", "stopId": 14366},
+	  { "label": "52 to Glen Park", "stopId": 14455},
+	  { "label": "From work going home" },
+	  { "label": "Folsom & Embarcadero going west", "stopId": 14510},
+	  { "label": "From nearby muni stations to home" },
+	  { "label": "52 from Glen Park", "stopId": 14388, "line": "52" },
+	  { "label": "52 from Forest Hill", "stopId": 15247, "line": "52" },
+	]
+
+
+	// Everything else shouldn't need touching. Yeah, this is pretty bad code... it's for personal use.
+
+	// Calculate how many minutes away the vehicle is.
+	function durationAway(inputTime) {
+	  // Create Date objects
+	  const utcDate = new Date(inputTime);
+	  const now = new Date();
+	  // Calculate the difference in milliseconds
+	  const diffInMilliseconds = now - utcDate;
+	  // Calculate the difference in minutes (positive value)
+	  const diffInMinutes = Math.floor(diffInMilliseconds / (1000 * 60)); 
+	  return Math.abs(diffInMinutes); // Return absolute value to ensure positive duration
+	}
+
+
+	// 
+	function getTimeInXMinutes(minutes) {
+	  const now = new Date();
+	  const millisecondsInMinutes = minutes * 60 * 1000; 
+	  const futureTime = new Date(now.getTime() + millisecondsInMinutes);
+	  const options = { 
+	    hour: '2-digit', 
+	    minute: '2-digit', 
+	    hour12: false 
+	  };
+	  return futureTime.toLocaleTimeString('en-US', options).toLowerCase(); 
+	}
+
+	// The function that runs for each stop ID.
+	function runTransitTimes(stopId, line = false) {
+		// Setup new HTML
+		var newHtml = "";
+		if (line) {
+
+			console.log('there is a line: '+line);
+			// Get data
+			$.ajax({
+			  type: "GET",
+			  url: "https://api.511.org/transit/StopMonitoring?api_key="+apiKey+"&stopCode="+stopId+"&agency=SF",
+			  dataType: "xml", 
+			  success: function(xml) {
+			    $(xml).find("MonitoredStopVisit").each(function() {
+			    	// If there's a line input,  make sure that we're looking for the right line
+			    	var responseLine = $(this).find("LineRef").text();
+			    	if (responseLine == line) {
+					  	console.log(xml);
+							// Parse the XML data to find arrival times for that line
+					    $(this).find("ExpectedArrivalTime").each(function() { 
+					    	var ExpectedArrivalTime = $(this).text();
+					    	if (ExpectedArrivalTime) {
+						    	var timeAway = durationAway( ExpectedArrivalTime );
+						    	var timeInMins = getTimeInXMinutes(timeAway);
+						      // Append to new HTML
+						      newHtml = newHtml + "<span class='arrival'><span class='away'>" + timeAway + "m</span> <span class='time'>"+timeInMins+"</span></span> ";
+					    	}
+					    });
+							// Insert back into HTML.
+							var DivStopId = "#arrivalTimes-" + stopId + "-" + line;
+							$(DivStopId).html(newHtml);
+			    	}
+			    });
+			  },
+			  error: function() {
+			    console.error("Error loading XML file.");
+			  }
+			});
+
+		} else {
+
+			console.log('no line');
+
+			$.ajax({
+			  type: "GET",
+			  url: "https://api.511.org/transit/StopMonitoring?api_key="+apiKey+"&stopCode="+stopId+"&agency=SF",
+			  dataType: "xml", 
+			  success: function(xml) {
+			    $(xml).find("MonitoredStopVisit").each(function() {
+						// Parse the XML data to find arrival times for that line
+				    $(this).find("ExpectedArrivalTime").each(function() { 
+				    	var ExpectedArrivalTime = $(this).text();
+				    	if (ExpectedArrivalTime) {
+					    	var timeAway = durationAway( ExpectedArrivalTime );
+					    	var timeInMins = getTimeInXMinutes(timeAway);
+					      // Append to new HTML
+					      newHtml = newHtml + "<span class='arrival'><span class='away'>" + timeAway + "m</span> <span class='time'>"+timeInMins+"</span></span> ";
+				    	}
+;
+				    });
+						// Insert back into HTML.
+						var DivStopId = "#arrivalTimes-" + stopId + "-";
+						$(DivStopId).html(newHtml);
+			    });
+			  },
+			  error: function() {
+			    console.error("Error loading XML file.");
+			  }
+			});
+
+		}
+	}
+
+	// Actually fetch the information from the API.
+	$(document).ready(function() {
+		$("#results").html("");
+		$.each(stopsAndLabels, function(index, stop) {
+			var newTransitReults = "<div class='stop'>";
+			if (stop.stopId && stop.line) {
+				newTransitReults = newTransitReults + "<div class='stopLabel'>"+stop.label+"</div>"
+				newTransitReults = newTransitReults + "<div class='arrivalTimes' id='arrivalTimes-"+stop.stopId+"-"+stop.line+"'></div>"
+				newTransitReults = newTransitReults + "</div>";	
+				$("#results").append(newTransitReults);
+				runTransitTimes(stop.stopId, stop.line);
+			} else if (stop.stopId) {
+				newTransitReults = newTransitReults + "<div class='stopLabel'>"+stop.label+"</div>"
+				newTransitReults = newTransitReults + "<div class='arrivalTimes' id='arrivalTimes-"+stop.stopId+"-'></div>"
+				newTransitReults = newTransitReults + "</div>";	
+				$("#results").append(newTransitReults);
+				runTransitTimes(stop.stopId);
+			} else {
+				var sectionLabel = "<div class='sectionLabel'>"+stop.label+"</div>";
+				$("#results").append(sectionLabel);
+			}
+		});
+	});;
+
+
+	</script>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Transit Timer</title>
+	<style type="text/css">
+		html {
+			font-family: Arial;
+			color: #333;
+		}
+		h1 {
+			font-size: 1.5em;
+			font-weight: 600;
+		}
+		.stop {
+		  padding-bottom: 0.7em;
+	    margin-bottom: 0.7em;
+	    border-bottom: 1px solid #eee;
+		}
+		.stop:last-child {
+	    border-bottom: 0px;
+		}
+		.stopLabel {
+			font-weight: 590;
+			margin-bottom: 0.3em;
+		}
+		.sectionLabel {
+			font-weight: 800;
+			margin-top: 0.5em;
+			margin-bottom: 0.8em;
+		}
+		.arrival {
+			display: inline-block;
+			padding-right: 0.5em;
+		}
+		.arrivalTimes {
+			overflow-x: scroll;
+			white-space: nowrap;
+		}
+		.arrival .time {
+			color: #999;
+		}
+	</style>
+	<body>
+		<h1>My Transit Timer</h1>
+		<div id="results"></div>
+	</body>
+</html>
