@@ -9,7 +9,7 @@ Just copy index.html. You can run this locally!
 
 1. GET A 511 API KEY AND ENTER IT IN INDEX.HTML
 
-a. Request a token at https://511.org/open-data/token. It's a 36 chacter string with a few dashes.
+a. Request a token at https://511.org/open-data/token. It looks like this "705e9e9b-0294-4ba2-8e6a-24718953301f" (this is expired; won't work). Requesting a token and getting it takes <60 seconds.
 
 b. In the javascript, edit var apiKey = "YOUR_KEY";
 
