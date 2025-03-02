@@ -7,7 +7,7 @@ Build a personal transit tracker in a few minutes.
 
 Just copy index.html. You can run this locally!
 
-1. GET A 511 API KEY AND ENTER IT BELOW
+1. GET A 511 API KEY AND ENTER IT IN INDEX.HTML
 
 a. Request a token at https://511.org/open-data/token. It's a 36 chacter string with a few dashes.
 
