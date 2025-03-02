@@ -13,7 +13,9 @@ a. Request a token at https://511.org/open-data/token. It's a 36 chacter string 
 
 b. In the javascript, edit var apiKey = "YOUR_KEY";
 
-2. CUSTOMIZE THE LABELS, STOPS, AND LINE
+c. Each API key has rate limits by default.
+
+2. CUSTOMIZE THE LABELS, STOPS, AND LINE IN stopsAndLabels
 
 For each stop / line combo you want to track:
 
