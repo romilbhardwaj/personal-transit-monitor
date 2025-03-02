@@ -1,34 +1,97 @@
-# personal-transit-monitor
-Simple way to view what transit is coming at stops you frequent.
+# Personal Transit Monitor
 
-### INSTRUCTIONS ###
+A modern, responsive web application to track public transit arrivals for your favorite stops and routes. Built with the 511.org API.
 
-Build a personal transit tracker in a few minutes.
+![Transit Monitor Screenshot](transit%20timer%20screenshot.png)
 
-Just copy index.html. You can run this locally!
+## Features
 
-1. GET A 511 API KEY AND ENTER IT IN INDEX.HTML
+- **Real-time transit arrivals**: See when your bus or train is arriving in minutes
+- **Custom stop groups**: Organize your transit stops with custom labels
+- **Filter by line**: Only show arrivals for specific routes
+- **Auto-refresh**: Data automatically refreshes every minute
+- **Responsive design**: Works well on mobile devices
+- **Dark mode support**: Automatically adapts to your system preferences
+- **Secure**: API keys are stored server-side, not in client code
 
-a. Request a token at https://511.org/open-data/token. It looks like this "705e9e9b-0294-4ba2-8e6a-24718953301f" (this is expired; won't work). Requesting a token and getting it takes <60 seconds.
+## Setup
 
-b. In the javascript, edit var apiKey = "YOUR_KEY";
+1. **Get an API key from 511.org**
+   - Request a free token at [511.org/open-data/token](https://511.org/open-data/token)
 
-c. Each API key has rate limits by default.
+2. **Clone this repository**
+   ```bash
+   git clone https://github.com/yourusername/personal-transit-monitor.git
+   cd personal-transit-monitor
+   ```
 
-2. CUSTOMIZE THE LABELS, STOPS, AND LINE IN stopsAndLabels
+3. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-For each stop / line combo you want to track:
+4. **Set up your environment variables**
+   - Copy the example environment file:
+     ```bash
+     cp .env.example .env
+     ```
+   - Edit the `.env` file and add your API key:
+     ```
+     API_KEY=your-api-key-here
+     PORT=3000
+     ```
 
-a. Create your own label.
+5. **Configure your stops**
+   - Open `js/app.js`
+   - Edit the `stopsAndLabels` array to include your own stops:
+     ```javascript
+     const stopsAndLabels = [
+       { label: "Home stops" },
+       { label: "14 Mission", stopId: 15184 },
+       { label: "From work", stopId: 13245, line: "14" }
+     ];
+     ```
 
-b. Find the Stop ID (easiest on Google Maps).
+6. **Start the server**
+   ```bash
+   npm start
+   ```
 
-c. Optionally, enter the line (like "14" or "N"). This is used to only the timings from specific bus/train lines.
+7. **Access the application**
+   - Open your browser and navigate to `http://localhost:3000`
 
-d. If you want to have have headers/titles, only have the label field (no stopId/line), and it'll show bold.
+## Customization
 
-3. HOST IT
+### Adding stops
 
-a. Wherever you want. http://tiiny.host/ allows you to host a page for free and is super easy for non-coders.
+To add a new stop:
 
-DONE!
+1. Find the stop ID (Usually available on Google Maps or the transit agency's website)
+2. Add an entry to the `stopsAndLabels` array in `js/app.js`:
+   - For a section header: `{ label: "My Section" }`
+   - For a stop: `{ label: "Bus name", stopId: 12345 }`
+   - For a stop with specific line: `{ label: "Bus name", stopId: 12345, line: "14" }`
+
+### Styling
+
+The application uses CSS variables for easy customization. Edit `css/styles.css` to change colors, fonts, and layout.
+
+## Deployment
+
+### Node.js hosting (Render, Heroku, etc.)
+
+1. Deploy your repository to your hosting provider
+2. Set up the `API_KEY` environment variable in your hosting provider's settings
+
+### Static hosting (GitHub Pages, Netlify, etc.)
+
+If you want to use static hosting, you'll need to modify the application to use a serverless function or another API proxy service to protect your API key.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Data provided by [511.org](https://511.org/)
+- Original concept based on a personal transit timer tool

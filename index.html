@@ -26,197 +26,51 @@ DONE!
 -->
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-	<script type="text/javascript">
-
-	// Enter your personal API key
-	var apiKey = "YOUR_TOKEN"; // Example is "705e9e9b-0294-4ba2-8e6a-24718953301f"
-
-	// Customize each stop
-	var stopsAndLabels = [
-	  { "label": "From home" },
-	  { "label": "52 to Forest Hill", "stopId": 14366},
-	  { "label": "52 to Glen Park", "stopId": 14455},
-	  { "label": "From work going home" },
-	  { "label": "Folsom & Embarcadero going west", "stopId": 14510},
-	  { "label": "From nearby muni stations to home" },
-	  { "label": "52 from Glen Park", "stopId": 14388, "line": "52" },
-	  { "label": "52 from Forest Hill", "stopId": 15247, "line": "52" },
-	]
-
-
-	// Everything else shouldn't need touching. Yeah, this is pretty bad code... it's for personal use.
-
-	// Calculate how many minutes away the vehicle is.
-	function durationAway(inputTime) {
-	  // Create Date objects
-	  const utcDate = new Date(inputTime);
-	  const now = new Date();
-	  // Calculate the difference in milliseconds
-	  const diffInMilliseconds = now - utcDate;
-	  // Calculate the difference in minutes (positive value)
-	  const diffInMinutes = Math.floor(diffInMilliseconds / (1000 * 60)); 
-	  return Math.abs(diffInMinutes); // Return absolute value to ensure positive duration
-	}
-
-
-	// 
-	function getTimeInXMinutes(minutes) {
-	  const now = new Date();
-	  const millisecondsInMinutes = minutes * 60 * 1000; 
-	  const futureTime = new Date(now.getTime() + millisecondsInMinutes);
-	  const options = { 
-	    hour: '2-digit', 
-	    minute: '2-digit', 
-	    hour12: false 
-	  };
-	  return futureTime.toLocaleTimeString('en-US', options).toLowerCase(); 
-	}
-
-	// The function that runs for each stop ID.
-	function runTransitTimes(stopId, line = false) {
-		// Setup new HTML
-		var newHtml = "";
-		if (line) {
-
-			console.log('there is a line: '+line);
-			// Get data
-			$.ajax({
-			  type: "GET",
-			  url: "https://api.511.org/transit/StopMonitoring?api_key="+apiKey+"&stopCode="+stopId+"&agency=SF",
-			  dataType: "xml", 
-			  success: function(xml) {
-			    $(xml).find("MonitoredStopVisit").each(function() {
-			    	// If there's a line input,  make sure that we're looking for the right line
-			    	var responseLine = $(this).find("LineRef").text();
-			    	if (responseLine == line) {
-					  	console.log(xml);
-							// Parse the XML data to find arrival times for that line
-					    $(this).find("ExpectedArrivalTime").each(function() { 
-					    	var ExpectedArrivalTime = $(this).text();
-					    	if (ExpectedArrivalTime) {
-						    	var timeAway = durationAway( ExpectedArrivalTime );
-						    	var timeInMins = getTimeInXMinutes(timeAway);
-						      // Append to new HTML
-						      newHtml = newHtml + "<span class='arrival'><span class='away'>" + timeAway + "m</span> <span class='time'>"+timeInMins+"</span></span> ";
-					    	}
-					    });
-							// Insert back into HTML.
-							var DivStopId = "#arrivalTimes-" + stopId + "-" + line;
-							$(DivStopId).html(newHtml);
-			    	}
-			    });
-			  },
-			  error: function() {
-			    console.error("Error loading XML file.");
-			  }
-			});
-
-		} else {
-
-			console.log('no line');
-
-			$.ajax({
-			  type: "GET",
-			  url: "https://api.511.org/transit/StopMonitoring?api_key="+apiKey+"&stopCode="+stopId+"&agency=SF",
-			  dataType: "xml", 
-			  success: function(xml) {
-			    $(xml).find("MonitoredStopVisit").each(function() {
-						// Parse the XML data to find arrival times for that line
-				    $(this).find("ExpectedArrivalTime").each(function() { 
-				    	var ExpectedArrivalTime = $(this).text();
-				    	if (ExpectedArrivalTime) {
-					    	var timeAway = durationAway( ExpectedArrivalTime );
-					    	var timeInMins = getTimeInXMinutes(timeAway);
-					      // Append to new HTML
-					      newHtml = newHtml + "<span class='arrival'><span class='away'>" + timeAway + "m</span> <span class='time'>"+timeInMins+"</span></span> ";
-				    	}
-;
-				    });
-						// Insert back into HTML.
-						var DivStopId = "#arrivalTimes-" + stopId + "-";
-						$(DivStopId).html(newHtml);
-			    });
-			  },
-			  error: function() {
-			    console.error("Error loading XML file.");
-			  }
-			});
-
-		}
-	}
-
-	// Actually fetch the information from the API.
-	$(document).ready(function() {
-		$("#results").html("");
-		$.each(stopsAndLabels, function(index, stop) {
-			var newTransitReults = "<div class='stop'>";
-			if (stop.stopId && stop.line) {
-				newTransitReults = newTransitReults + "<div class='stopLabel'>"+stop.label+"</div>"
-				newTransitReults = newTransitReults + "<div class='arrivalTimes' id='arrivalTimes-"+stop.stopId+"-"+stop.line+"'></div>"
-				newTransitReults = newTransitReults + "</div>";	
-				$("#results").append(newTransitReults);
-				runTransitTimes(stop.stopId, stop.line);
-			} else if (stop.stopId) {
-				newTransitReults = newTransitReults + "<div class='stopLabel'>"+stop.label+"</div>"
-				newTransitReults = newTransitReults + "<div class='arrivalTimes' id='arrivalTimes-"+stop.stopId+"-'></div>"
-				newTransitReults = newTransitReults + "</div>";	
-				$("#results").append(newTransitReults);
-				runTransitTimes(stop.stopId);
-			} else {
-				var sectionLabel = "<div class='sectionLabel'>"+stop.label+"</div>";
-				$("#results").append(sectionLabel);
-			}
-		});
-	});;
-
-
-	</script>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Transit Timer</title>
-	<style type="text/css">
-		html {
-			font-family: Arial;
-			color: #333;
-		}
-		h1 {
-			font-size: 1.5em;
-			font-weight: 600;
-		}
-		.stop {
-		  padding-bottom: 0.7em;
-	    margin-bottom: 0.7em;
-	    border-bottom: 1px solid #eee;
-		}
-		.stop:last-child {
-	    border-bottom: 0px;
-		}
-		.stopLabel {
-			font-weight: 590;
-			margin-bottom: 0.3em;
-		}
-		.sectionLabel {
-			font-weight: 800;
-			margin-top: 0.5em;
-			margin-bottom: 0.8em;
-		}
-		.arrival {
-			display: inline-block;
-			padding-right: 0.5em;
-		}
-		.arrivalTimes {
-			overflow-x: scroll;
-			white-space: nowrap;
-		}
-		.arrival .time {
-			color: #999;
-		}
-	</style>
-	<body>
-		<h1>My Transit Timer</h1>
-		<div id="results"></div>
-	</body>
+	<meta name="description" content="Personal Transit Monitor - Track your favorite public transit routes and stops">
+	<meta name="theme-color" content="#4285F4">
+	
+	<title>Personal Transit Monitor</title>
+	
+	<!-- Favicon -->
+	<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAABX1BMVEUAAABAgP8+ff88e/87ev87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef87ef//////+hxG4EAAAB3HRSTlMAAActVXult8bW3OHl6Onp5ODb1MO0po5cIwEQM2WTtNbp9v3259CrdzwZAwlBdJe4Drb93qmCUicGF6bwrGEuA2HurSIEkPmSLAbK/ssSWv3bXAiJ+YsJB8v+zBBZ/dtbkfmTMbf93YYgj/iRQQTL/cwKWPzbWgVN+txOUITdiUwHRnaYugoRNWeVt9jq9/jt0q16QBsEYKrvqWIwCV+n76smCFJ3mbkPEjZplrrW6ff479XAs5l/XDsgAQ07ZIyuvcnV3eDh3tnSxbeih10/EgFi5osrAAAAAwHQTFRFAAAA/wAAAP8AAAD/AABWqv8AWYDLXnvGX3rDX3rDX3rDX3rDX3rDX3rDX3rDX3rDX3rDX3rDX3rDX3rDX3rDX3rDX3rDX3rDX3rDK2vdAAAAJHRSTlMABitFWWttWUUrBhw/YmVlYj8cEiI0NDU1NDQiEg0VGRkWDdPWIFX1AAAAAWJLR0QAiAUdSAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAAd0SU1FB+QEBQoaKLhGTNkAAADoSURBVDjLY2AYZoCRiZmFlY2dg5OLGwiYGUYZ4OHl4xcQ1NHVEwIC9tEFBAJNTM3MLSytrHVEbGzt7EcdcHB0cnZxdXP38NTx8vbxHXXAL8A/MCg4JDQsPCIyKjpmtHXj4xMSk5JTUtPSMzKzsnNGG8jNyytwLS4pLSuvqKyqrhlt3dr0Ooa6+obGpuaW1rb20QY6Oru6e7p7evv6J0ycNHm0dackTp02fcbMWbPnzJ3XOn+0dRcutly8ZOmy5StWrlorumZ0kVy3fsPGTZu3bN22fQfPztEGdu3es3ff/gMHDx0+whA52jr8AAB1mGM2433yjwAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyMC0wNC0wNVQxMDoyNjo0MCswMDowMJAYq6IAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjAtMDQtMDVUMTA6MjY6NDArMDA6MDDhRRMeAAAAAElFTkSuQmCC">
+	
+	<!-- Fonts -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+	
+	<!-- Stylesheets -->
+	<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+	<div class="container">
+		<header>
+			<h1>Personal Transit Monitor</h1>
+			<div class="header-controls">
+				<span id="last-updated" class="last-updated">Last updated: --:--:--</span>
+				<button id="refresh-button" class="refresh-button" aria-label="Refresh transit data">
+					Refresh
+				</button>
+			</div>
+		</header>
+		
+		<main>
+			<div id="results">
+				<!-- Transit data will be loaded here by JavaScript -->
+				<div class="loading">Loading transit data...</div>
+			</div>
+		</main>
+		
+		<footer>
+			<p>Powered by 511.org API &bull; Data may not be real-time</p>
+		</footer>
+	</div>
+	
+	<!-- Application Script -->
+	<script src="js/app.js"></script>
+</body>
 </html>
