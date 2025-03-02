@@ -3,7 +3,9 @@ Simple way to view what transit is coming at stops you frequent.
 
 ### INSTRUCTIONS ###
 
-Build a personal transit tracker in a few minutes!
+Build a personal transit tracker in a few minutes.
+
+Just copy index.html. You can run this locally!
 
 1. GET A 511 API KEY AND ENTER IT BELOW
 
