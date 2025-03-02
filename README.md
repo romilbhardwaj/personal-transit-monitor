@@ -27,4 +27,8 @@ c. Optionally, enter the line (like "14" or "N"). This is used to only the timin
 
 d. If you want to have have headers/titles, only have the label field (no stopId/line), and it'll show bold.
 
+3. HOST IT
+
+a. Wherever you want. http://tiiny.host/ allows you to host a page for free and is super easy for non-coders.
+
 DONE!
